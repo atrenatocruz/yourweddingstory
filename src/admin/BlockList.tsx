@@ -53,6 +53,13 @@ export function BlockList({ blocks, onChange }: BlockListProps) {
       .then((result) => {
         setSaveError(result.error ? 'Não foi possível gravar a secção. Tenta novamente.' : null)
       })
+      .catch(() => {
+        // Only reached if the update call itself throws (e.g. a network
+        // exception, not a {error} response). Swallow so this rejection
+        // doesn't surface as an unhandled rejection if no further edit for
+        // this block ever chains onto it; the next commit's own .catch (line
+        // above) already tolerates a rejected `previous`.
+      })
     writeChains.current[id] = next
     return next
   }
