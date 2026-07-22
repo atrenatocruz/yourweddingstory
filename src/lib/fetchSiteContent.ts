@@ -1,11 +1,9 @@
 import { supabase } from './supabase'
 import type { SiteSettings, Block } from '../types/content'
 
-const SITE_SETTINGS_SELECT = `id, eyebrow, headline, body,
+const SITE_SETTINGS_SELECT = `id,
   heroImageUrl:hero_image_url, heroImageAlt:hero_image_alt,
-  cta1Label:cta_1_label, cta1Href:cta_1_href, cta1External:cta_1_external,
-  cta2Label:cta_2_label, cta2Href:cta_2_href,
-  emailHref:email_href, instagramHref:instagram_href`
+  bgColor:bg_color, cardColor:card_color, textColor:text_color`
 
 export interface FetchSiteContentResult {
   settings: SiteSettings | null

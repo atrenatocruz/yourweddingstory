@@ -40,6 +40,36 @@ export function GalleryBlockIcon() {
   )
 }
 
+export function EyebrowBlockIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+      <line x1="3" y1="3" x2="9" y2="3" />
+      <line x1="2" y1="8" x2="14" y2="8" />
+    </svg>
+  )
+}
+
+export function HeadlineBlockIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2">
+      <line x1="2" y1="5" x2="14" y2="5" />
+      <line x1="2" y1="11" x2="10" y2="11" />
+    </svg>
+  )
+}
+
+export function SocialIconsBlockIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <line x1="6" y1="9" x2="12" y2="4" />
+      <line x1="6" y1="9" x2="13" y2="11" />
+      <circle cx="6" cy="9" r="3.2" />
+      <circle cx="12" cy="4" r="1.6" />
+      <circle cx="13" cy="11" r="1.6" />
+    </svg>
+  )
+}
+
 export function DragHandleIcon() {
   return (
     <svg viewBox="0 0 16 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">

@@ -467,6 +467,26 @@
   flex: 1;
 }
 
+.admin-social-icon-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-color-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-color-field input[type='color'] {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0;
+}
+
 /* drag handle */
 
 .admin-drag-handle {

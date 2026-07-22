@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
-import { isRequired, isValidUrl } from '../lib/validation'
 import type { SiteSettings } from '../types/content'
 
 interface SiteSettingsFormProps {
@@ -9,9 +8,10 @@ interface SiteSettingsFormProps {
   onSavingChange?: (saving: boolean) => void
 }
 
+const HEX_COLOR_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
+
 export function SiteSettingsForm({ settings, onChange, onSavingChange }: SiteSettingsFormProps) {
   const [draft, setDraft] = useState<SiteSettings>(settings)
-  const [errors, setErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
@@ -27,22 +27,8 @@ export function SiteSettingsForm({ settings, onChange, onSavingChange }: SiteSet
     onChange(next)
   }
 
-  function validate(): boolean {
-    const nextErrors: Record<string, string> = {}
-    if (!isRequired(draft.eyebrow)) nextErrors.eyebrow = 'Campo obrigatório'
-    if (!isRequired(draft.headline)) nextErrors.headline = 'Campo obrigatório'
-    if (!isRequired(draft.body)) nextErrors.body = 'Campo obrigatório'
-    if (!isValidUrl(draft.cta1Href)) nextErrors.cta1Href = 'Link inválido'
-    if (!isValidUrl(draft.cta2Href)) nextErrors.cta2Href = 'Link inválido'
-    if (!isValidUrl(draft.emailHref)) nextErrors.emailHref = 'Email inválido'
-    if (!isValidUrl(draft.instagramHref)) nextErrors.instagramHref = 'Link inválido'
-    setErrors(nextErrors)
-    return Object.keys(nextErrors).length === 0
-  }
-
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    if (!validate()) return
 
     setSaving(true)
     setSaveError(null)
@@ -50,18 +36,11 @@ export function SiteSettingsForm({ settings, onChange, onSavingChange }: SiteSet
     const { error } = await supabase
       .from('site_settings')
       .update({
-        eyebrow: draft.eyebrow,
-        headline: draft.headline,
-        body: draft.body,
         hero_image_url: draft.heroImageUrl,
         hero_image_alt: draft.heroImageAlt,
-        cta_1_label: draft.cta1Label,
-        cta_1_href: draft.cta1Href,
-        cta_1_external: draft.cta1External,
-        cta_2_label: draft.cta2Label,
-        cta_2_href: draft.cta2Href,
-        email_href: draft.emailHref,
-        instagram_href: draft.instagramHref,
+        bg_color: draft.bgColor,
+        card_color: draft.cardColor,
+        text_color: draft.textColor,
         updated_at: new Date().toISOString(),
       })
       .eq('id', draft.id)
@@ -78,39 +57,6 @@ export function SiteSettingsForm({ settings, onChange, onSavingChange }: SiteSet
       <h2 className="admin-section-title">Conteúdo principal</h2>
 
       <div className="admin-fieldset">
-        <div className={`admin-field${errors.eyebrow ? ' has-error' : ''}`}>
-          <label htmlFor="eyebrow">Eyebrow</label>
-          <input
-            id="eyebrow"
-            className="admin-input"
-            value={draft.eyebrow}
-            onChange={(e) => updateField('eyebrow', e.target.value)}
-          />
-          {errors.eyebrow && <p className="admin-field-error">{errors.eyebrow}</p>}
-        </div>
-
-        <div className={`admin-field${errors.headline ? ' has-error' : ''}`}>
-          <label htmlFor="headline">Título</label>
-          <input
-            id="headline"
-            className="admin-input"
-            value={draft.headline}
-            onChange={(e) => updateField('headline', e.target.value)}
-          />
-          {errors.headline && <p className="admin-field-error">{errors.headline}</p>}
-        </div>
-
-        <div className={`admin-field${errors.body ? ' has-error' : ''}`}>
-          <label htmlFor="body">Texto</label>
-          <textarea
-            id="body"
-            className="admin-textarea"
-            value={draft.body}
-            onChange={(e) => updateField('body', e.target.value)}
-          />
-          {errors.body && <p className="admin-field-error">{errors.body}</p>}
-        </div>
-
         <div className="admin-field">
           <label htmlFor="heroImageUrl">Imagem de topo (URL)</label>
           <input
@@ -121,73 +67,35 @@ export function SiteSettingsForm({ settings, onChange, onSavingChange }: SiteSet
           />
         </div>
 
-        <div className="admin-field-row">
-          <div className="admin-field">
-            <label htmlFor="cta1Label">Botão 1 - texto</label>
-            <input
-              id="cta1Label"
-              className="admin-input"
-              value={draft.cta1Label}
-              onChange={(e) => updateField('cta1Label', e.target.value)}
-            />
-          </div>
-
-          <div className={`admin-field${errors.cta1Href ? ' has-error' : ''}`}>
-            <label htmlFor="cta1Href">Botão 1 - link</label>
-            <input
-              id="cta1Href"
-              className="admin-input"
-              value={draft.cta1Href}
-              onChange={(e) => updateField('cta1Href', e.target.value)}
-            />
-            {errors.cta1Href && <p className="admin-field-error">{errors.cta1Href}</p>}
-          </div>
-        </div>
-
-        <div className="admin-field-row">
-          <div className="admin-field">
-            <label htmlFor="cta2Label">Botão 2 - texto</label>
-            <input
-              id="cta2Label"
-              className="admin-input"
-              value={draft.cta2Label}
-              onChange={(e) => updateField('cta2Label', e.target.value)}
-            />
-          </div>
-
-          <div className={`admin-field${errors.cta2Href ? ' has-error' : ''}`}>
-            <label htmlFor="cta2Href">Botão 2 - link</label>
-            <input
-              id="cta2Href"
-              className="admin-input"
-              value={draft.cta2Href}
-              onChange={(e) => updateField('cta2Href', e.target.value)}
-            />
-            {errors.cta2Href && <p className="admin-field-error">{errors.cta2Href}</p>}
-          </div>
-        </div>
-
-        <div className={`admin-field${errors.emailHref ? ' has-error' : ''}`}>
-          <label htmlFor="emailHref">Email de contacto</label>
+        <div className="admin-field">
+          <label htmlFor="heroImageAlt">Imagem de topo (texto alternativo)</label>
           <input
-            id="emailHref"
+            id="heroImageAlt"
             className="admin-input"
-            value={draft.emailHref}
-            onChange={(e) => updateField('emailHref', e.target.value)}
+            value={draft.heroImageAlt}
+            onChange={(e) => updateField('heroImageAlt', e.target.value)}
           />
-          {errors.emailHref && <p className="admin-field-error">{errors.emailHref}</p>}
         </div>
+      </div>
 
-        <div className={`admin-field${errors.instagramHref ? ' has-error' : ''}`}>
-          <label htmlFor="instagramHref">Instagram</label>
-          <input
-            id="instagramHref"
-            className="admin-input"
-            value={draft.instagramHref}
-            onChange={(e) => updateField('instagramHref', e.target.value)}
-          />
-          {errors.instagramHref && <p className="admin-field-error">{errors.instagramHref}</p>}
-        </div>
+      <h2 className="admin-section-title">Aparência</h2>
+
+      <div className="admin-fieldset">
+        <ColorField
+          label="Cor de fundo"
+          value={draft.bgColor}
+          onChange={(value) => updateField('bgColor', value)}
+        />
+        <ColorField
+          label="Cor do cartão"
+          value={draft.cardColor}
+          onChange={(value) => updateField('cardColor', value)}
+        />
+        <ColorField
+          label="Cor do texto"
+          value={draft.textColor}
+          onChange={(value) => updateField('textColor', value)}
+        />
 
         {saveError && <p className="admin-field-error">{saveError}</p>}
         <button type="submit" className="admin-primary-button" disabled={saving}>
@@ -195,5 +103,53 @@ export function SiteSettingsForm({ settings, onChange, onSavingChange }: SiteSet
         </button>
       </div>
     </form>
+  )
+}
+
+interface ColorFieldProps {
+  label: string
+  value: string
+  onChange: (value: string) => void
+}
+
+function ColorField({ label, value, onChange }: ColorFieldProps) {
+  // The text field can hold whatever the user is mid-typing (including an
+  // invalid or incomplete hex string); the swatch falls back to the last
+  // valid value it was given rather than crashing on an invalid `value` prop.
+  const [text, setText] = useState(value)
+  const swatchValue = HEX_COLOR_RE.test(value) ? value : '#000000'
+
+  useEffect(() => {
+    setText(value)
+  }, [value])
+
+  function handleTextChange(next: string) {
+    setText(next)
+    if (HEX_COLOR_RE.test(next)) {
+      onChange(next)
+    }
+  }
+
+  return (
+    <div className="admin-field">
+      <label>{label}</label>
+      <div className="admin-color-field">
+        <input
+          type="color"
+          value={swatchValue}
+          onChange={(e) => {
+            setText(e.target.value)
+            onChange(e.target.value)
+          }}
+        />
+        <input
+          type="text"
+          className="admin-input"
+          value={text}
+          onChange={(e) => handleTextChange(e.target.value)}
+          onBlur={() => setText(value)}
+        />
+      </div>
+    </div>
   )
 }

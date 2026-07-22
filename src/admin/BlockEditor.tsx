@@ -1,6 +1,25 @@
-import type { Block, TextBlockData, ImageBlockData, ButtonBlockData, GalleryBlockData } from '../types/content'
+import type {
+  Block,
+  EyebrowBlockData,
+  HeadlineBlockData,
+  BodyTextBlockData,
+  TextBlockData,
+  ImageBlockData,
+  ButtonBlockData,
+  GalleryBlockData,
+  SocialIconsBlockData,
+  SocialPlatform,
+} from '../types/content'
 import { TallyDot } from './TallyDot'
-import { TextBlockIcon, ImageBlockIcon, ButtonBlockIcon, GalleryBlockIcon } from './icons'
+import {
+  TextBlockIcon,
+  ImageBlockIcon,
+  ButtonBlockIcon,
+  GalleryBlockIcon,
+  EyebrowBlockIcon,
+  HeadlineBlockIcon,
+  SocialIconsBlockIcon,
+} from './icons'
 
 interface BlockEditorProps {
   block: Block
@@ -10,18 +29,37 @@ interface BlockEditorProps {
 }
 
 const typeLabels: Record<Block['type'], string> = {
+  eyebrow: 'Eyebrow',
+  headline: 'Título',
+  bodytext: 'Texto principal',
   text: 'Texto',
   image: 'Imagem',
   button: 'Botão',
   gallery: 'Galeria',
+  'social-icons': 'Ícones sociais',
 }
 
 const typeIcons: Record<Block['type'], JSX.Element> = {
+  eyebrow: <EyebrowBlockIcon />,
+  headline: <HeadlineBlockIcon />,
+  bodytext: <TextBlockIcon />,
   text: <TextBlockIcon />,
   image: <ImageBlockIcon />,
   button: <ButtonBlockIcon />,
   gallery: <GalleryBlockIcon />,
+  'social-icons': <SocialIconsBlockIcon />,
 }
+
+const socialPlatformOptions: { value: SocialPlatform; label: string }[] = [
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'website', label: 'Website' },
+  { value: 'email', label: 'Email' },
+  { value: 'pinterest', label: 'Pinterest' },
+]
 
 export function BlockEditor({ block, saving = false, onChange, onRemove }: BlockEditorProps) {
   return (
@@ -38,10 +76,61 @@ export function BlockEditor({ block, saving = false, onChange, onRemove }: Block
           </button>
         </div>
       </div>
+      {block.type === 'eyebrow' && <EyebrowBlockFields data={block.data as EyebrowBlockData} onChange={onChange} />}
+      {block.type === 'headline' && <HeadlineBlockFields data={block.data as HeadlineBlockData} onChange={onChange} />}
+      {block.type === 'bodytext' && <BodyTextBlockFields data={block.data as BodyTextBlockData} onChange={onChange} />}
       {block.type === 'text' && <TextBlockFields data={block.data as TextBlockData} onChange={onChange} />}
       {block.type === 'image' && <ImageBlockFields data={block.data as ImageBlockData} onChange={onChange} />}
       {block.type === 'button' && <ButtonBlockFields data={block.data as ButtonBlockData} onChange={onChange} />}
       {block.type === 'gallery' && <GalleryBlockFields data={block.data as GalleryBlockData} onChange={onChange} />}
+      {block.type === 'social-icons' && (
+        <SocialIconsBlockFields data={block.data as SocialIconsBlockData} onChange={onChange} />
+      )}
+    </div>
+  )
+}
+
+function EyebrowBlockFields({ data, onChange }: { data: EyebrowBlockData; onChange: (data: Block['data']) => void }) {
+  return (
+    <div className="admin-block-fields">
+      <div className="admin-field">
+        <label>Texto</label>
+        <input
+          className="admin-input"
+          value={data.text}
+          onChange={(e) => onChange({ ...data, text: e.target.value })}
+        />
+      </div>
+    </div>
+  )
+}
+
+function HeadlineBlockFields({ data, onChange }: { data: HeadlineBlockData; onChange: (data: Block['data']) => void }) {
+  return (
+    <div className="admin-block-fields">
+      <div className="admin-field">
+        <label>Texto</label>
+        <input
+          className="admin-input"
+          value={data.text}
+          onChange={(e) => onChange({ ...data, text: e.target.value })}
+        />
+      </div>
+    </div>
+  )
+}
+
+function BodyTextBlockFields({ data, onChange }: { data: BodyTextBlockData; onChange: (data: Block['data']) => void }) {
+  return (
+    <div className="admin-block-fields">
+      <div className="admin-field">
+        <label>Texto</label>
+        <textarea
+          className="admin-textarea"
+          value={data.text}
+          onChange={(e) => onChange({ ...data, text: e.target.value })}
+        />
+      </div>
     </div>
   )
 }
@@ -157,6 +246,60 @@ function GalleryBlockFields({ data, onChange }: { data: GalleryBlockData; onChan
       ))}
       <button type="button" className="admin-pill-button" onClick={addImage}>
         Adicionar imagem
+      </button>
+    </div>
+  )
+}
+
+function SocialIconsBlockFields({
+  data,
+  onChange,
+}: {
+  data: SocialIconsBlockData
+  onChange: (data: Block['data']) => void
+}) {
+  function updateIcon(index: number, field: 'platform' | 'href', value: string) {
+    const icons = data.icons.map((icon, i) => (i === index ? { ...icon, [field]: value } : icon))
+    onChange({ icons })
+  }
+
+  function addIcon() {
+    onChange({ icons: [...data.icons, { platform: 'instagram', href: '' }] })
+  }
+
+  function removeIcon(index: number) {
+    onChange({ icons: data.icons.filter((_, i) => i !== index) })
+  }
+
+  return (
+    <div className="admin-block-fields">
+      {data.icons.map((icon, index) => (
+        <div key={index} className="admin-social-icon-row">
+          <select
+            className="admin-input"
+            value={icon.platform}
+            onChange={(e) => updateIcon(index, 'platform', e.target.value)}
+          >
+            {socialPlatformOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <input
+            className="admin-input"
+            placeholder="Link"
+            style={{ flex: 1 }}
+            value={icon.href}
+            onChange={(e) => updateIcon(index, 'href', e.target.value)}
+          />
+          <button type="button" className="admin-ghost-button" onClick={() => removeIcon(index)}>
+            Remover ícone
+          </button>
+        </div>
+      ))}
+      <button type="button" className="admin-pill-button" onClick={addIcon}>
+        + Adicionar ícone
       </button>
     </div>
   )

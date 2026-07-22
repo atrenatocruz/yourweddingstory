@@ -4,7 +4,27 @@ export interface Cta {
   external?: boolean
 }
 
-export type BlockType = 'text' | 'image' | 'button' | 'gallery'
+export type BlockType =
+  | 'eyebrow'
+  | 'headline'
+  | 'bodytext'
+  | 'text'
+  | 'image'
+  | 'button'
+  | 'gallery'
+  | 'social-icons'
+
+export interface EyebrowBlockData {
+  text: string
+}
+
+export interface HeadlineBlockData {
+  text: string
+}
+
+export interface BodyTextBlockData {
+  text: string
+}
 
 export interface TextBlockData {
   heading?: string
@@ -27,7 +47,34 @@ export interface GalleryBlockData {
   images: { url: string; alt: string }[]
 }
 
-export type BlockData = TextBlockData | ImageBlockData | ButtonBlockData | GalleryBlockData
+export type SocialPlatform =
+  | 'instagram'
+  | 'tiktok'
+  | 'facebook'
+  | 'youtube'
+  | 'whatsapp'
+  | 'website'
+  | 'email'
+  | 'pinterest'
+
+export interface SocialIconEntry {
+  platform: SocialPlatform
+  href: string
+}
+
+export interface SocialIconsBlockData {
+  icons: SocialIconEntry[]
+}
+
+export type BlockData =
+  | EyebrowBlockData
+  | HeadlineBlockData
+  | BodyTextBlockData
+  | TextBlockData
+  | ImageBlockData
+  | ButtonBlockData
+  | GalleryBlockData
+  | SocialIconsBlockData
 
 export interface Block {
   id: string
@@ -38,16 +85,9 @@ export interface Block {
 
 export interface SiteSettings {
   id: string
-  eyebrow: string
-  headline: string
-  body: string
   heroImageUrl: string
   heroImageAlt: string
-  cta1Label: string
-  cta1Href: string
-  cta1External: boolean
-  cta2Label: string
-  cta2Href: string
-  emailHref: string
-  instagramHref: string
+  bgColor: string
+  cardColor: string
+  textColor: string
 }

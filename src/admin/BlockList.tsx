@@ -17,6 +17,12 @@ interface BlockListProps {
 
 function defaultDataFor(type: BlockType): Block['data'] {
   switch (type) {
+    case 'eyebrow':
+      return { text: '' }
+    case 'headline':
+      return { text: '' }
+    case 'bodytext':
+      return { text: '' }
     case 'text':
       return { body: '' }
     case 'image':
@@ -25,6 +31,8 @@ function defaultDataFor(type: BlockType): Block['data'] {
       return { label: '', href: '' }
     case 'gallery':
       return { images: [] }
+    case 'social-icons':
+      return { icons: [] }
   }
 }
 
@@ -173,6 +181,15 @@ export function BlockList({ blocks, onChange, onSavingChange }: BlockListProps) 
         </SortableContext>
       </DndContext>
       <div className="admin-add-block">
+        <button type="button" className="admin-pill-button" onClick={() => handleAdd('eyebrow')}>
+          + Eyebrow
+        </button>
+        <button type="button" className="admin-pill-button" onClick={() => handleAdd('headline')}>
+          + Título
+        </button>
+        <button type="button" className="admin-pill-button" onClick={() => handleAdd('bodytext')}>
+          + Texto principal
+        </button>
         <button type="button" className="admin-pill-button" onClick={() => handleAdd('text')}>
           + Texto
         </button>
@@ -184,6 +201,9 @@ export function BlockList({ blocks, onChange, onSavingChange }: BlockListProps) 
         </button>
         <button type="button" className="admin-pill-button" onClick={() => handleAdd('gallery')}>
           + Galeria
+        </button>
+        <button type="button" className="admin-pill-button" onClick={() => handleAdd('social-icons')}>
+          + Ícones sociais
         </button>
       </div>
     </div>
