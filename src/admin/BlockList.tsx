@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -28,6 +28,14 @@ function defaultDataFor(type: BlockType): Block['data'] {
 export function BlockList({ blocks, onChange }: BlockListProps) {
   const sensors = useSensors(useSensor(PointerSensor))
   const [saveError, setSaveError] = useState<string | null>(null)
+  const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+
+  useEffect(() => {
+    const timers = debounceTimers.current
+    return () => {
+      Object.values(timers).forEach(clearTimeout)
+    }
+  }, [])
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -44,11 +52,21 @@ export function BlockList({ blocks, onChange }: BlockListProps) {
     setSaveError(results.some((r) => r.error) ? 'Não foi possível gravar a nova ordem. Tenta novamente.' : null)
   }
 
-  async function handleBlockChange(id: string, data: Block['data']) {
+  function handleBlockChange(id: string, data: Block['data']) {
     const updated = blocks.map((block) => (block.id === id ? { ...block, data } : block))
     onChange(updated)
-    const { error } = await supabase.from('blocks').update({ data }).eq('id', id)
-    setSaveError(error ? 'Não foi possível gravar a secção. Tenta novamente.' : null)
+
+    // Debounce the actual write per block: typing fires this on every keystroke,
+    // and un-debounced concurrent requests can resolve out of order, letting an
+    // earlier (shorter) value overwrite a later one. Only the last edit within
+    // the debounce window is sent, and no two writes for the same block overlap.
+    if (debounceTimers.current[id]) {
+      clearTimeout(debounceTimers.current[id])
+    }
+    debounceTimers.current[id] = setTimeout(async () => {
+      const { error } = await supabase.from('blocks').update({ data }).eq('id', id)
+      setSaveError(error ? 'Não foi possível gravar a secção. Tenta novamente.' : null)
+    }, 500)
   }
 
   async function handleRemove(id: string) {
