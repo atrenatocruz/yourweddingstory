@@ -12,15 +12,25 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchSiteContent().then((result) => {
-      setSettings(result.settings)
-      setBlocks(result.blocks)
-      setLoading(false)
-    })
+    fetchSiteContent()
+      .then((result) => {
+        setSettings(result.settings)
+        setBlocks(result.blocks)
+        setLoading(false)
+      })
+      .catch(() => {
+        setSettings(null)
+        setBlocks([])
+        setLoading(false)
+      })
   }, [])
 
   async function handleLogout() {
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut()
+    } catch {
+      // signOut clears local session state client-side even if the network call fails
+    }
   }
 
   if (loading) {
