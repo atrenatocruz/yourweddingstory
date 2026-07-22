@@ -58,7 +58,7 @@ export function BlockList({ blocks, onChange }: BlockListProps) {
   }
 
   async function handleAdd(type: BlockType) {
-    const position = blocks.length
+    const position = blocks.reduce((max, block) => Math.max(max, block.position), -1) + 1
     const { data, error } = await supabase
       .from('blocks')
       .insert({ type, position, data: defaultDataFor(type) })
