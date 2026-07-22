@@ -29,6 +29,14 @@ export function BlockList({ blocks, onChange }: BlockListProps) {
   const sensors = useSensors(useSensor(PointerSensor))
   const [saveError, setSaveError] = useState<string | null>(null)
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  // One promise chain per block id: guarantees writes for the same block are
+  // sent to the server strictly one-at-a-time, in call order. Debouncing alone
+  // only reduces how often a write fires -- two writes fired far enough apart
+  // to both survive debounce could still be in flight at once and let an
+  // out-of-order server response overwrite a newer value. Chaining removes
+  // that possibility entirely: the next write is never sent until the
+  // previous one has finished.
+  const writeChains = useRef<Record<string, Promise<unknown>>>({})
 
   useEffect(() => {
     const timers = debounceTimers.current
@@ -36,6 +44,18 @@ export function BlockList({ blocks, onChange }: BlockListProps) {
       Object.values(timers).forEach(clearTimeout)
     }
   }, [])
+
+  function commitBlockData(id: string, data: Block['data']) {
+    const previous = writeChains.current[id] ?? Promise.resolve()
+    const next = previous
+      .catch(() => {})
+      .then(() => supabase.from('blocks').update({ data }).eq('id', id))
+      .then((result) => {
+        setSaveError(result.error ? 'Não foi possível gravar a secção. Tenta novamente.' : null)
+      })
+    writeChains.current[id] = next
+    return next
+  }
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -56,22 +76,28 @@ export function BlockList({ blocks, onChange }: BlockListProps) {
     const updated = blocks.map((block) => (block.id === id ? { ...block, data } : block))
     onChange(updated)
 
-    // Debounce the actual write per block: typing fires this on every keystroke,
-    // and un-debounced concurrent requests can resolve out of order, letting an
-    // earlier (shorter) value overwrite a later one. Only the last edit within
-    // the debounce window is sent, and no two writes for the same block overlap.
+    // Debounce so a fast typing burst coalesces into one write instead of one
+    // per keystroke; commitBlockData then guarantees that write (and any other
+    // pending write for this same block) is sent strictly after the previous
+    // one completes, so the server always processes them in the right order.
     if (debounceTimers.current[id]) {
       clearTimeout(debounceTimers.current[id])
     }
-    debounceTimers.current[id] = setTimeout(async () => {
-      const { error } = await supabase.from('blocks').update({ data }).eq('id', id)
-      setSaveError(error ? 'Não foi possível gravar a secção. Tenta novamente.' : null)
+    debounceTimers.current[id] = setTimeout(() => {
+      delete debounceTimers.current[id]
+      commitBlockData(id, data)
     }, 500)
   }
 
   async function handleRemove(id: string) {
+    if (debounceTimers.current[id]) {
+      clearTimeout(debounceTimers.current[id])
+      delete debounceTimers.current[id]
+    }
     onChange(blocks.filter((block) => block.id !== id))
-    const { error } = await supabase.from('blocks').delete().eq('id', id)
+    const previous = writeChains.current[id] ?? Promise.resolve()
+    const { error } = await previous.catch(() => {}).then(() => supabase.from('blocks').delete().eq('id', id))
+    delete writeChains.current[id]
     setSaveError(error ? 'Não foi possível remover a secção. Tenta novamente.' : null)
   }
 
