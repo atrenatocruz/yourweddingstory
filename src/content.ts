@@ -36,6 +36,6 @@ export const content: SiteContent = {
   ],
   social: {
     emailHref: 'mailto:geral@melaniefernandes.com',
-    instagramHref: 'https://instagram.com/yourweddingstory.pt',
+    instagramHref: 'https://www.instagram.com/yourweddingstory_/',
   },
 }
