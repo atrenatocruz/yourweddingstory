@@ -1,5 +1,6 @@
 :root {
   --color-bg: #f1ece6;
+  --color-card: #ffffff;
   --color-text: #222222;
   --font-eyebrow: 'Josefin Sans', sans-serif;
   --font-serif: 'Cormorant Garamond', serif;
@@ -26,7 +27,7 @@ body {
 .card {
   width: 100%;
   max-width: 380px;
-  background-color: var(--color-bg);
+  background-color: var(--color-card);
 }
 
 .hero-image {
@@ -100,13 +101,16 @@ body {
   display: inline-flex;
 }
 
-@media (max-width: 420px) {
+@media (max-width: 768px) {
   .page {
-    padding: 0;
+    padding: 24px 12px;
   }
 
   .card {
-    max-width: 100%;
+    max-width: 420px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(34, 34, 34, 0.12);
   }
 
   .card-content {
