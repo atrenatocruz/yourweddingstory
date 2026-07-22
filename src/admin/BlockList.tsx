@@ -5,11 +5,14 @@ import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../lib/supabase'
 import { reorderBlocks } from '../lib/blockOrdering'
 import { BlockEditor } from './BlockEditor'
+import { TallyDot } from './TallyDot'
+import { DragHandleIcon } from './icons'
 import type { Block, BlockType } from '../types/content'
 
 interface BlockListProps {
   blocks: Block[]
   onChange: (blocks: Block[]) => void
+  onSavingChange?: (saving: boolean) => void
 }
 
 function defaultDataFor(type: BlockType): Block['data'] {
@@ -25,9 +28,14 @@ function defaultDataFor(type: BlockType): Block['data'] {
   }
 }
 
-export function BlockList({ blocks, onChange }: BlockListProps) {
+export function BlockList({ blocks, onChange, onSavingChange }: BlockListProps) {
   const sensors = useSensors(useSensor(PointerSensor))
   const [saveError, setSaveError] = useState<string | null>(null)
+  // Purely observational: tracks which block ids currently have a write in
+  // flight so the UI can show a per-card (and aggregate) "saving" tally dot.
+  // Does not participate in commitBlockData's own serialization.
+  const [savingIds, setSavingIds] = useState<Set<string>>(new Set())
+  const [reordering, setReordering] = useState(false)
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   // One promise chain per block id: guarantees writes for the same block are
   // sent to the server strictly one-at-a-time, in call order. Debouncing alone
@@ -44,6 +52,23 @@ export function BlockList({ blocks, onChange }: BlockListProps) {
       Object.values(timers).forEach(clearTimeout)
     }
   }, [])
+
+  useEffect(() => {
+    onSavingChange?.(reordering || savingIds.size > 0)
+  }, [reordering, savingIds, onSavingChange])
+
+  function markSaving(id: string) {
+    setSavingIds((prev) => new Set(prev).add(id))
+  }
+
+  function clearSaving(id: string) {
+    setSavingIds((prev) => {
+      if (!prev.has(id)) return prev
+      const next = new Set(prev)
+      next.delete(id)
+      return next
+    })
+  }
 
   function commitBlockData(id: string, data: Block['data']) {
     const previous = writeChains.current[id] ?? Promise.resolve()
@@ -73,9 +98,11 @@ export function BlockList({ blocks, onChange }: BlockListProps) {
     const reordered = reorderBlocks(blocks, fromIndex, toIndex)
     onChange(reordered)
 
+    setReordering(true)
     const results = await Promise.all(
       reordered.map((block) => supabase.from('blocks').update({ position: block.position }).eq('id', block.id))
     )
+    setReordering(false)
     setSaveError(results.some((r) => r.error) ? 'Não foi possível gravar a nova ordem. Tenta novamente.' : null)
   }
 
@@ -92,7 +119,8 @@ export function BlockList({ blocks, onChange }: BlockListProps) {
     }
     debounceTimers.current[id] = setTimeout(() => {
       delete debounceTimers.current[id]
-      commitBlockData(id, data)
+      markSaving(id)
+      commitBlockData(id, data).finally(() => clearSaving(id))
     }, 500)
   }
 
@@ -127,26 +155,34 @@ export function BlockList({ blocks, onChange }: BlockListProps) {
 
   return (
     <div className="admin-block-list">
-      <h2>Secções</h2>
+      <h2 className="admin-section-title">Secções</h2>
       {saveError && <p className="admin-field-error">{saveError}</p>}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-          {blocks.map((block) => (
-            <SortableBlockRow key={block.id} block={block} onChange={handleBlockChange} onRemove={handleRemove} />
-          ))}
+          <div className="admin-sortable-list">
+            {blocks.map((block) => (
+              <SortableBlockRow
+                key={block.id}
+                block={block}
+                saving={savingIds.has(block.id)}
+                onChange={handleBlockChange}
+                onRemove={handleRemove}
+              />
+            ))}
+          </div>
         </SortableContext>
       </DndContext>
       <div className="admin-add-block">
-        <button type="button" onClick={() => handleAdd('text')}>
+        <button type="button" className="admin-pill-button" onClick={() => handleAdd('text')}>
           + Texto
         </button>
-        <button type="button" onClick={() => handleAdd('image')}>
+        <button type="button" className="admin-pill-button" onClick={() => handleAdd('image')}>
           + Imagem
         </button>
-        <button type="button" onClick={() => handleAdd('button')}>
+        <button type="button" className="admin-pill-button" onClick={() => handleAdd('button')}>
           + Botão
         </button>
-        <button type="button" onClick={() => handleAdd('gallery')}>
+        <button type="button" className="admin-pill-button" onClick={() => handleAdd('gallery')}>
           + Galeria
         </button>
       </div>
@@ -156,14 +192,16 @@ export function BlockList({ blocks, onChange }: BlockListProps) {
 
 function SortableBlockRow({
   block,
+  saving,
   onChange,
   onRemove,
 }: {
   block: Block
+  saving: boolean
   onChange: (id: string, data: Block['data']) => void
   onRemove: (id: string) => void
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: block.id })
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -171,11 +209,20 @@ function SortableBlockRow({
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="admin-sortable-block">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`admin-sortable-block${isDragging ? ' is-dragging' : ''}`}
+    >
       <div className="admin-drag-handle" {...attributes} {...listeners}>
-        ⠿
+        <DragHandleIcon />
       </div>
-      <BlockEditor block={block} onChange={(data) => onChange(block.id, data)} onRemove={() => onRemove(block.id)} />
+      <BlockEditor
+        block={block}
+        saving={saving}
+        onChange={(data) => onChange(block.id, data)}
+        onRemove={() => onRemove(block.id)}
+      />
     </div>
   )
 }

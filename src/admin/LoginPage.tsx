@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import './admin.css'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
@@ -28,29 +29,37 @@ export function LoginPage() {
 
   return (
     <div className="admin-login-page">
-      <form className="admin-login-form" onSubmit={handleSubmit}>
-        <h1>Entrar</h1>
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-        />
-        <label htmlFor="password">Password</label>
-        <input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-        />
-        {error && <p className="admin-login-error">{error}</p>}
-        <button type="submit" disabled={submitting}>
-          {submitting ? 'A entrar...' : 'Entrar'}
-        </button>
-      </form>
+      <div className="admin-login-card">
+        <form className="admin-login-form" onSubmit={handleSubmit}>
+          <h1 className="admin-login-heading">Entrar</h1>
+          <div className="admin-field">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              className="admin-input"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+          </div>
+          <div className="admin-field">
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              className="admin-input"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+          </div>
+          {error && <p className="admin-field-error">{error}</p>}
+          <button type="submit" className="admin-primary-button" disabled={submitting}>
+            {submitting ? 'A entrar...' : 'Entrar'}
+          </button>
+        </form>
+      </div>
     </div>
   )
 }

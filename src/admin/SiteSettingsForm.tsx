@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { isRequired, isValidUrl } from '../lib/validation'
 import type { SiteSettings } from '../types/content'
@@ -6,13 +6,20 @@ import type { SiteSettings } from '../types/content'
 interface SiteSettingsFormProps {
   settings: SiteSettings
   onChange: (settings: SiteSettings) => void
+  onSavingChange?: (saving: boolean) => void
 }
 
-export function SiteSettingsForm({ settings, onChange }: SiteSettingsFormProps) {
+export function SiteSettingsForm({ settings, onChange, onSavingChange }: SiteSettingsFormProps) {
   const [draft, setDraft] = useState<SiteSettings>(settings)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+
+  // Observe the existing saving state to drive the tally-dot indicator; this
+  // does not change when/how the form actually saves.
+  useEffect(() => {
+    onSavingChange?.(saving)
+  }, [saving, onSavingChange])
 
   function updateField<K extends keyof SiteSettings>(field: K, value: SiteSettings[K]) {
     const next = { ...draft, [field]: value }
@@ -68,57 +75,125 @@ export function SiteSettingsForm({ settings, onChange }: SiteSettingsFormProps) 
 
   return (
     <form className="admin-settings-form" onSubmit={handleSubmit}>
-      <h2>Conteúdo principal</h2>
+      <h2 className="admin-section-title">Conteúdo principal</h2>
 
-      <label htmlFor="eyebrow">Eyebrow</label>
-      <input id="eyebrow" value={draft.eyebrow} onChange={(e) => updateField('eyebrow', e.target.value)} />
-      {errors.eyebrow && <p className="admin-field-error">{errors.eyebrow}</p>}
+      <div className="admin-fieldset">
+        <div className={`admin-field${errors.eyebrow ? ' has-error' : ''}`}>
+          <label htmlFor="eyebrow">Eyebrow</label>
+          <input
+            id="eyebrow"
+            className="admin-input"
+            value={draft.eyebrow}
+            onChange={(e) => updateField('eyebrow', e.target.value)}
+          />
+          {errors.eyebrow && <p className="admin-field-error">{errors.eyebrow}</p>}
+        </div>
 
-      <label htmlFor="headline">Título</label>
-      <input id="headline" value={draft.headline} onChange={(e) => updateField('headline', e.target.value)} />
-      {errors.headline && <p className="admin-field-error">{errors.headline}</p>}
+        <div className={`admin-field${errors.headline ? ' has-error' : ''}`}>
+          <label htmlFor="headline">Título</label>
+          <input
+            id="headline"
+            className="admin-input"
+            value={draft.headline}
+            onChange={(e) => updateField('headline', e.target.value)}
+          />
+          {errors.headline && <p className="admin-field-error">{errors.headline}</p>}
+        </div>
 
-      <label htmlFor="body">Texto</label>
-      <textarea id="body" value={draft.body} onChange={(e) => updateField('body', e.target.value)} />
-      {errors.body && <p className="admin-field-error">{errors.body}</p>}
+        <div className={`admin-field${errors.body ? ' has-error' : ''}`}>
+          <label htmlFor="body">Texto</label>
+          <textarea
+            id="body"
+            className="admin-textarea"
+            value={draft.body}
+            onChange={(e) => updateField('body', e.target.value)}
+          />
+          {errors.body && <p className="admin-field-error">{errors.body}</p>}
+        </div>
 
-      <label htmlFor="heroImageUrl">Imagem de topo (URL)</label>
-      <input
-        id="heroImageUrl"
-        value={draft.heroImageUrl}
-        onChange={(e) => updateField('heroImageUrl', e.target.value)}
-      />
+        <div className="admin-field">
+          <label htmlFor="heroImageUrl">Imagem de topo (URL)</label>
+          <input
+            id="heroImageUrl"
+            className="admin-input"
+            value={draft.heroImageUrl}
+            onChange={(e) => updateField('heroImageUrl', e.target.value)}
+          />
+        </div>
 
-      <label htmlFor="cta1Label">Botão 1 - texto</label>
-      <input id="cta1Label" value={draft.cta1Label} onChange={(e) => updateField('cta1Label', e.target.value)} />
+        <div className="admin-field-row">
+          <div className="admin-field">
+            <label htmlFor="cta1Label">Botão 1 - texto</label>
+            <input
+              id="cta1Label"
+              className="admin-input"
+              value={draft.cta1Label}
+              onChange={(e) => updateField('cta1Label', e.target.value)}
+            />
+          </div>
 
-      <label htmlFor="cta1Href">Botão 1 - link</label>
-      <input id="cta1Href" value={draft.cta1Href} onChange={(e) => updateField('cta1Href', e.target.value)} />
-      {errors.cta1Href && <p className="admin-field-error">{errors.cta1Href}</p>}
+          <div className={`admin-field${errors.cta1Href ? ' has-error' : ''}`}>
+            <label htmlFor="cta1Href">Botão 1 - link</label>
+            <input
+              id="cta1Href"
+              className="admin-input"
+              value={draft.cta1Href}
+              onChange={(e) => updateField('cta1Href', e.target.value)}
+            />
+            {errors.cta1Href && <p className="admin-field-error">{errors.cta1Href}</p>}
+          </div>
+        </div>
 
-      <label htmlFor="cta2Label">Botão 2 - texto</label>
-      <input id="cta2Label" value={draft.cta2Label} onChange={(e) => updateField('cta2Label', e.target.value)} />
+        <div className="admin-field-row">
+          <div className="admin-field">
+            <label htmlFor="cta2Label">Botão 2 - texto</label>
+            <input
+              id="cta2Label"
+              className="admin-input"
+              value={draft.cta2Label}
+              onChange={(e) => updateField('cta2Label', e.target.value)}
+            />
+          </div>
 
-      <label htmlFor="cta2Href">Botão 2 - link</label>
-      <input id="cta2Href" value={draft.cta2Href} onChange={(e) => updateField('cta2Href', e.target.value)} />
-      {errors.cta2Href && <p className="admin-field-error">{errors.cta2Href}</p>}
+          <div className={`admin-field${errors.cta2Href ? ' has-error' : ''}`}>
+            <label htmlFor="cta2Href">Botão 2 - link</label>
+            <input
+              id="cta2Href"
+              className="admin-input"
+              value={draft.cta2Href}
+              onChange={(e) => updateField('cta2Href', e.target.value)}
+            />
+            {errors.cta2Href && <p className="admin-field-error">{errors.cta2Href}</p>}
+          </div>
+        </div>
 
-      <label htmlFor="emailHref">Email de contacto</label>
-      <input id="emailHref" value={draft.emailHref} onChange={(e) => updateField('emailHref', e.target.value)} />
-      {errors.emailHref && <p className="admin-field-error">{errors.emailHref}</p>}
+        <div className={`admin-field${errors.emailHref ? ' has-error' : ''}`}>
+          <label htmlFor="emailHref">Email de contacto</label>
+          <input
+            id="emailHref"
+            className="admin-input"
+            value={draft.emailHref}
+            onChange={(e) => updateField('emailHref', e.target.value)}
+          />
+          {errors.emailHref && <p className="admin-field-error">{errors.emailHref}</p>}
+        </div>
 
-      <label htmlFor="instagramHref">Instagram</label>
-      <input
-        id="instagramHref"
-        value={draft.instagramHref}
-        onChange={(e) => updateField('instagramHref', e.target.value)}
-      />
-      {errors.instagramHref && <p className="admin-field-error">{errors.instagramHref}</p>}
+        <div className={`admin-field${errors.instagramHref ? ' has-error' : ''}`}>
+          <label htmlFor="instagramHref">Instagram</label>
+          <input
+            id="instagramHref"
+            className="admin-input"
+            value={draft.instagramHref}
+            onChange={(e) => updateField('instagramHref', e.target.value)}
+          />
+          {errors.instagramHref && <p className="admin-field-error">{errors.instagramHref}</p>}
+        </div>
 
-      {saveError && <p className="admin-field-error">{saveError}</p>}
-      <button type="submit" disabled={saving}>
-        {saving ? 'A gravar...' : 'Gravar'}
-      </button>
+        {saveError && <p className="admin-field-error">{saveError}</p>}
+        <button type="submit" className="admin-primary-button" disabled={saving}>
+          {saving ? 'A gravar...' : 'Gravar'}
+        </button>
+      </div>
     </form>
   )
 }
