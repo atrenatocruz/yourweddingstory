@@ -44,22 +44,29 @@ export function useSiteContent(): SiteContentState {
   useEffect(() => {
     let cancelled = false
 
-    fetchSiteContent().then((result) => {
+    function fallbackToCache() {
       if (cancelled) return
-
-      if (result.error || !result.settings) {
-        const cached = readCache()
-        if (cached) {
-          setState({ settings: cached.settings, blocks: cached.blocks, loading: false, error: null })
-        } else {
-          setState({ settings: null, blocks: [], loading: false, error: 'conteudo-indisponivel' })
-        }
-        return
+      const cached = readCache()
+      if (cached) {
+        setState({ settings: cached.settings, blocks: cached.blocks, loading: false, error: null })
+      } else {
+        setState({ settings: null, blocks: [], loading: false, error: 'conteudo-indisponivel' })
       }
+    }
 
-      writeCache({ settings: result.settings, blocks: result.blocks })
-      setState({ settings: result.settings, blocks: result.blocks, loading: false, error: null })
-    })
+    fetchSiteContent()
+      .then((result) => {
+        if (cancelled) return
+
+        if (result.error || !result.settings) {
+          fallbackToCache()
+          return
+        }
+
+        writeCache({ settings: result.settings, blocks: result.blocks })
+        setState({ settings: result.settings, blocks: result.blocks, loading: false, error: null })
+      })
+      .catch(fallbackToCache)
 
     return () => {
       cancelled = true
