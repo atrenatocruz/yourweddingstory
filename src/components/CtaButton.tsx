@@ -1,4 +1,4 @@
-import type { Cta } from '../content'
+import type { Cta } from '../types/content'
 
 export function CtaButton({ label, href, external }: Cta) {
   return (

@@ -1,32 +1,25 @@
-import { content } from './content'
-import { Eyebrow } from './components/Eyebrow'
-import { Headline } from './components/Headline'
-import { BodyText } from './components/BodyText'
-import { HeroImage } from './components/HeroImage'
-import { CtaButton } from './components/CtaButton'
-import { SocialIcons } from './components/SocialIcons'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { PublicSite } from './PublicSite'
+import { AdminGuard } from './admin/AdminGuard'
+import { AdminDashboard } from './admin/AdminDashboard'
+import { LoginPage } from './admin/LoginPage'
 
 function App() {
   return (
-    <div className="page">
-      <div className="card">
-        <HeroImage src={content.heroImageUrl} alt={content.heroImageAlt} />
-        <div className="card-content">
-          <Eyebrow text={content.eyebrow} />
-          <Headline text={content.headline} />
-          <BodyText text={content.body} />
-          <div className="cta-group">
-            {content.ctas.map((cta) => (
-              <CtaButton key={cta.label} {...cta} />
-            ))}
-          </div>
-          <SocialIcons
-            emailHref={content.social.emailHref}
-            instagramHref={content.social.instagramHref}
-          />
-        </div>
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<PublicSite />} />
+        <Route path="/admin/login" element={<LoginPage />} />
+        <Route
+          path="/admin"
+          element={
+            <AdminGuard>
+              <AdminDashboard />
+            </AdminGuard>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
