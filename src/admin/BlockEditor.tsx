@@ -277,6 +277,7 @@ function SocialIconsBlockFields({
         <div key={index} className="admin-social-icon-row">
           <select
             className="admin-input"
+            style={{ flex: '0 0 140px', width: '140px' }}
             value={icon.platform}
             onChange={(e) => updateIcon(index, 'platform', e.target.value)}
           >
