@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import { useSiteContent } from './hooks/useSiteContent'
 import { HeroImage } from './components/HeroImage'
 import { BlockRenderer } from './components/BlockRenderer'
+import { ContactFormModal } from './components/ContactFormModal'
 
 export function PublicSite() {
   const { settings, blocks, loading, error } = useSiteContent()
@@ -39,6 +40,7 @@ export function PublicSite() {
           <BlockRenderer blocks={blocks} />
         </div>
       </div>
+      <ContactFormModal />
     </div>
   )
 }

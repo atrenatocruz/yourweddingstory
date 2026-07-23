@@ -43,6 +43,11 @@ export interface ButtonBlockData {
   external?: boolean
 }
 
+// A button whose href is exactly this value opens the on-page contact form
+// modal instead of navigating anywhere -- editable from the admin like any
+// other button, just by setting its link field to this value.
+export const CONTACT_FORM_HREF = '#contact'
+
 export interface GalleryBlockData {
   images: { url: string; alt: string }[]
 }
