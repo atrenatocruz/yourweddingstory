@@ -203,6 +203,15 @@ body {
   max-width: 100%;
 }
 
+.contact-field input[type='date'] {
+  /* iOS Safari draws its own native frame on top of custom borders for
+     date inputs unless appearance is fully reset, showing as a stray
+     line across the field. Take over all visual styling ourselves. */
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: var(--color-card);
+}
+
 .contact-field input::placeholder,
 .contact-field textarea::placeholder {
   color: var(--color-text);
