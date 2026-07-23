@@ -194,6 +194,7 @@ body {
 .contact-field textarea {
   font-family: var(--font-serif);
   font-size: 16px;
+  line-height: 1.4;
   color: var(--color-text);
   background: transparent;
   border: 1px solid var(--color-text);
@@ -201,6 +202,10 @@ body {
   width: 100%;
   min-width: 0;
   max-width: 100%;
+}
+
+.contact-field input {
+  min-height: 44px;
 }
 
 .contact-field input[type='date'] {
