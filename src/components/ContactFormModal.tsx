@@ -1,34 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react'
-
-interface ContactFormState {
-  fullName: string
-  partnerName: string
-  email: string
-  phone: string
-  weddingDate: string
-  venueName: string
-  guestCount: string
-  vision: string
-  contentType: string
-}
-
-const emptyForm: ContactFormState = {
-  fullName: '',
-  partnerName: '',
-  email: '',
-  phone: '',
-  weddingDate: '',
-  venueName: '',
-  guestCount: '',
-  vision: '',
-  contentType: '',
-}
+import { fetchContactFormFields } from '../lib/fetchContactFormFields'
+import type { ContactFormField } from '../types/content'
 
 type SubmitStatus = 'idle' | 'submitting' | 'success' | 'error'
 
 export function ContactFormModal() {
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState<ContactFormState>(emptyForm)
+  const [fields, setFields] = useState<ContactFormField[] | null>(null)
+  const [values, setValues] = useState<Record<string, string>>({})
   const [status, setStatus] = useState<SubmitStatus>('idle')
 
   useEffect(() => {
@@ -38,6 +17,14 @@ export function ContactFormModal() {
     window.addEventListener('open-contact-form', handleOpen)
     return () => window.removeEventListener('open-contact-form', handleOpen)
   }, [])
+
+  useEffect(() => {
+    if (!open || fields) return
+    fetchContactFormFields().then((loaded) => {
+      setFields(loaded)
+      setValues(Object.fromEntries(loaded.map((field) => [field.id, ''])))
+    })
+  }, [open, fields])
 
   useEffect(() => {
     if (!open) return
@@ -50,27 +37,29 @@ export function ContactFormModal() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [open])
 
-  function updateField<K extends keyof ContactFormState>(field: K, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }))
+  function updateValue(id: string, value: string) {
+    setValues((prev) => ({ ...prev, [id]: value }))
   }
 
   function handleClose() {
     setOpen(false)
     if (status !== 'submitting') {
       setStatus('idle')
-      setForm(emptyForm)
+      setFields(null)
+      setValues({})
     }
   }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
+    if (!fields) return
     setStatus('submitting')
 
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ fields, values }),
       })
 
       if (!res.ok) {
@@ -99,110 +88,42 @@ export function ContactFormModal() {
           <div className="contact-modal-success">
             <p className="body-text">Thank you! We&apos;ll be in touch soon.</p>
           </div>
+        ) : !fields ? (
+          <div className="contact-modal-loading" />
         ) : (
           <form className="contact-form" onSubmit={handleSubmit}>
             <p className="contact-form-intro body-text">
               Reach out with your details and we&apos;ll be in touch soon!
             </p>
 
-            <div className="contact-field">
-              <label htmlFor="fullName">Your Full Name *</label>
-              <input
-                id="fullName"
-                required
-                value={form.fullName}
-                onChange={(e) => updateField('fullName', e.target.value)}
-              />
-            </div>
-
-            <div className="contact-field">
-              <label htmlFor="partnerName">Your Fiancé&apos;s Full Name *</label>
-              <input
-                id="partnerName"
-                required
-                value={form.partnerName}
-                onChange={(e) => updateField('partnerName', e.target.value)}
-              />
-            </div>
-
-            <div className="contact-field-row">
-              <div className="contact-field">
-                <label htmlFor="email">Email Address *</label>
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={(e) => updateField('email', e.target.value)}
-                />
+            {fields.map((field) => (
+              <div className="contact-field" key={field.id}>
+                <label htmlFor={field.id}>
+                  {field.label}
+                  {field.required ? ' *' : ''}
+                </label>
+                {field.type === 'textarea' ? (
+                  <textarea
+                    id={field.id}
+                    required={field.required}
+                    placeholder={field.placeholder ?? undefined}
+                    maxLength={5000}
+                    value={values[field.id] ?? ''}
+                    onChange={(e) => updateValue(field.id, e.target.value)}
+                  />
+                ) : (
+                  <input
+                    id={field.id}
+                    type={field.type}
+                    required={field.required}
+                    placeholder={field.placeholder ?? undefined}
+                    min={field.type === 'number' ? 0 : undefined}
+                    value={values[field.id] ?? ''}
+                    onChange={(e) => updateValue(field.id, e.target.value)}
+                  />
+                )}
               </div>
-
-              <div className="contact-field">
-                <label htmlFor="phone">Mobile Phone Number</label>
-                <input
-                  id="phone"
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => updateField('phone', e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="contact-field-row">
-              <div className="contact-field">
-                <label htmlFor="weddingDate">Wedding Date *</label>
-                <input
-                  id="weddingDate"
-                  type="date"
-                  required
-                  value={form.weddingDate}
-                  onChange={(e) => updateField('weddingDate', e.target.value)}
-                />
-              </div>
-
-              <div className="contact-field">
-                <label htmlFor="venueName">Venue Name *</label>
-                <input
-                  id="venueName"
-                  required
-                  value={form.venueName}
-                  onChange={(e) => updateField('venueName', e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="contact-field">
-              <label htmlFor="guestCount">Estimate Guest Count</label>
-              <input
-                id="guestCount"
-                type="number"
-                min="0"
-                value={form.guestCount}
-                onChange={(e) => updateField('guestCount', e.target.value)}
-              />
-            </div>
-
-            <div className="contact-field">
-              <label htmlFor="vision">What is your vision for your wedding?</label>
-              <textarea
-                id="vision"
-                placeholder="Please provide some details about your special day!"
-                maxLength={5000}
-                value={form.vision}
-                onChange={(e) => updateField('vision', e.target.value)}
-              />
-            </div>
-
-            <div className="contact-field">
-              <label htmlFor="contentType">What type of content would you like me to create?</label>
-              <textarea
-                id="contentType"
-                placeholder="Tell me everything you would like me to know!"
-                maxLength={5000}
-                value={form.contentType}
-                onChange={(e) => updateField('contentType', e.target.value)}
-              />
-            </div>
+            ))}
 
             {status === 'error' && (
               <p className="contact-form-error body-text">

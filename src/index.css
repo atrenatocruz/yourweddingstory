@@ -251,6 +251,10 @@ body {
   padding: 24px 0;
 }
 
+.contact-modal-loading {
+  min-height: 120px;
+}
+
 @media (max-width: 560px) {
   .contact-field-row {
     grid-template-columns: 1fr;

@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { fetchSiteContent } from '../lib/fetchSiteContent'
+import { fetchContactFormFields } from '../lib/fetchContactFormFields'
 import { SiteSettingsForm } from './SiteSettingsForm'
 import { BlockList } from './BlockList'
+import { ContactFormFieldsEditor } from './ContactFormFieldsEditor'
 import { LivePreview } from './LivePreview'
 import { TallyDot } from './TallyDot'
-import type { SiteSettings, Block } from '../types/content'
+import type { SiteSettings, Block, ContactFormField } from '../types/content'
 import './admin.css'
 
 export function AdminDashboard() {
   const [settings, setSettings] = useState<SiteSettings | null>(null)
   const [blocks, setBlocks] = useState<Block[]>([])
+  const [contactFields, setContactFields] = useState<ContactFormField[]>([])
   const [loading, setLoading] = useState(true)
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [blocksSaving, setBlocksSaving] = useState(false)
+  const [contactFieldsSaving, setContactFieldsSaving] = useState(false)
   const [previewOpen, setPreviewOpen] = useState<boolean>(() =>
     typeof window === 'undefined' ? true : window.matchMedia('(min-width: 901px)').matches
   )
@@ -26,15 +30,17 @@ export function AdminDashboard() {
   }, [])
 
   useEffect(() => {
-    fetchSiteContent()
-      .then((result) => {
+    Promise.all([fetchSiteContent(), fetchContactFormFields()])
+      .then(([result, fields]) => {
         setSettings(result.settings)
         setBlocks(result.blocks)
+        setContactFields(fields)
         setLoading(false)
       })
       .catch(() => {
         setSettings(null)
         setBlocks([])
+        setContactFields([])
         setLoading(false)
       })
   }, [])
@@ -55,7 +61,7 @@ export function AdminDashboard() {
     return <div className="admin-dashboard-loading">Não foi possível carregar o conteúdo.</div>
   }
 
-  const anySaving = settingsSaving || blocksSaving
+  const anySaving = settingsSaving || blocksSaving || contactFieldsSaving
 
   return (
     <div className="admin-dashboard">
@@ -91,6 +97,11 @@ export function AdminDashboard() {
         <div className="admin-dashboard-editors">
           <SiteSettingsForm settings={settings} onChange={setSettings} onSavingChange={setSettingsSaving} />
           <BlockList blocks={blocks} onChange={setBlocks} onSavingChange={setBlocksSaving} />
+          <ContactFormFieldsEditor
+            fields={contactFields}
+            onChange={setContactFields}
+            onSavingChange={setContactFieldsSaving}
+          />
         </div>
       </div>
     </div>

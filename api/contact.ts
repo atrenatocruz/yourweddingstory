@@ -1,15 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
+interface SubmittedField {
+  id: string
+  label: string
+  type: string
+  required: boolean
+}
+
 interface ContactPayload {
-  fullName?: string
-  partnerName?: string
-  email?: string
-  phone?: string
-  weddingDate?: string
-  venueName?: string
-  guestCount?: string
-  vision?: string
-  contentType?: string
+  fields?: SubmittedField[]
+  values?: Record<string, string>
 }
 
 function escapeHtml(value: string): string {
@@ -27,20 +27,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const body = req.body as ContactPayload
+  const fields = body.fields ?? []
+  const values = body.values ?? {}
 
-  const fullName = (body.fullName ?? '').trim()
-  const partnerName = (body.partnerName ?? '').trim()
-  const email = (body.email ?? '').trim()
-  const phone = (body.phone ?? '').trim()
-  const weddingDate = (body.weddingDate ?? '').trim()
-  const venueName = (body.venueName ?? '').trim()
-  const guestCount = (body.guestCount ?? '').trim()
-  const vision = (body.vision ?? '').trim()
-  const contentType = (body.contentType ?? '').trim()
-
-  if (!fullName || !partnerName || !email || !weddingDate || !venueName) {
-    res.status(400).json({ error: 'Missing required fields' })
+  if (fields.length === 0) {
+    res.status(400).json({ error: 'No fields submitted' })
     return
+  }
+
+  for (const field of fields) {
+    if (field.required && !(values[field.id] ?? '').trim()) {
+      res.status(400).json({ error: 'Missing required fields' })
+      return
+    }
   }
 
   const apiKey = process.env.RESEND_API_KEY
@@ -52,33 +51,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const toEmail = process.env.CONTACT_TO_EMAIL || 'geral@melaniefernandes.com'
   const fromEmail = process.env.CONTACT_FROM_EMAIL || 'onboarding@resend.dev'
 
+  const emailField = fields.find((field) => field.type === 'email')
+  const replyToEmail = emailField ? (values[emailField.id] ?? '').trim() : undefined
+
+  const nameField = fields.find((field) => field.type === 'text')
+  const enquirerName = nameField ? (values[nameField.id] ?? '').trim() : 'a couple'
+
   const textBody = [
-    `💌 New wedding enquiry from yourweddingstory.pt`,
+    '💌 New wedding enquiry from yourweddingstory.pt',
     '',
-    `👰🤵 Couple: ${fullName} & ${partnerName}`,
-    `📧 Email: ${email}`,
-    `📱 Phone: ${phone || '-'}`,
-    `📅 Wedding date: ${weddingDate}`,
-    `📍 Venue: ${venueName}`,
-    `👥 Estimated guests: ${guestCount || '-'}`,
-    '',
-    '💭 Their vision for the wedding:',
-    vision || '-',
-    '',
-    '🎥 Type of content requested:',
-    contentType || '-',
+    ...fields.map((field) => `${field.label}: ${(values[field.id] ?? '').trim() || '-'}`),
   ].join('\n')
 
-  const row = (emoji: string, label: string, value: string) => `
-    <tr>
-      <td style="padding: 10px 0; border-bottom: 1px solid #e8ded0; font-size: 15px; color: #6b6459; white-space: nowrap; vertical-align: top;">
-        ${emoji}&nbsp; ${label}
-      </td>
-      <td style="padding: 10px 0 10px 16px; border-bottom: 1px solid #e8ded0; font-size: 15px; color: #222222; vertical-align: top;">
-        ${value || '<em>-</em>'}
-      </td>
-    </tr>
-  `
+  const rows = fields
+    .map((field) => {
+      const value = (values[field.id] ?? '').trim()
+      const displayValue =
+        field.type === 'email' && value
+          ? `<a href="mailto:${escapeHtml(value)}" style="color:#5c7482;">${escapeHtml(value)}</a>`
+          : escapeHtml(value).replace(/\n/g, '<br>') || '<em>-</em>'
+
+      return `
+        <tr>
+          <td style="padding: 10px 0; border-bottom: 1px solid #e8ded0; font-size: 14px; color: #6b6459; white-space: nowrap; vertical-align: top;">
+            ${escapeHtml(field.label)}
+          </td>
+          <td style="padding: 10px 0 10px 16px; border-bottom: 1px solid #e8ded0; font-size: 15px; color: #222222; vertical-align: top;">
+            ${displayValue}
+          </td>
+        </tr>
+      `
+    })
+    .join('')
 
   const htmlBody = `
     <div style="background:#f1ece6; padding: 32px 16px; font-family: Georgia, 'Times New Roman', serif;">
@@ -90,22 +94,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         </div>
         <div style="padding: 0 28px 28px;">
           <table style="width: 100%; border-collapse: collapse;">
-            ${row('👰🤵', 'Couple', `${escapeHtml(fullName)} &amp; ${escapeHtml(partnerName)}`)}
-            ${row('📧', 'Email', `<a href="mailto:${escapeHtml(email)}" style="color:#5c7482;">${escapeHtml(email)}</a>`)}
-            ${row('📱', 'Phone', escapeHtml(phone))}
-            ${row('📅', 'Wedding date', escapeHtml(weddingDate))}
-            ${row('📍', 'Venue', escapeHtml(venueName))}
-            ${row('👥', 'Guests', escapeHtml(guestCount))}
+            ${rows}
           </table>
-          <div style="margin-top: 20px;">
-            <p style="font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #6b6459; margin: 0 0 6px;">💭 Their vision for the wedding</p>
-            <p style="font-size: 15px; color: #222222; margin: 0 0 20px; white-space: pre-wrap;">${escapeHtml(vision) || '<em>-</em>'}</p>
-            <p style="font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #6b6459; margin: 0 0 6px;">🎥 Content they'd love</p>
-            <p style="font-size: 15px; color: #222222; margin: 0; white-space: pre-wrap;">${escapeHtml(contentType) || '<em>-</em>'}</p>
-          </div>
         </div>
         <div style="background: #f1ece6; padding: 16px 28px; text-align: center;">
-          <p style="font-size: 12px; color: #6b6459; margin: 0;">Just hit reply to write back to ${escapeHtml(fullName)} directly 💕</p>
+          <p style="font-size: 12px; color: #6b6459; margin: 0;">Just hit reply to write back to ${escapeHtml(enquirerName)} directly 💕</p>
         </div>
       </div>
     </div>
@@ -121,8 +114,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         from: `Your Wedding Story <${fromEmail}>`,
         to: [toEmail],
-        reply_to: email,
-        subject: `💍 New wedding enquiry from ${fullName} & ${partnerName}`,
+        reply_to: replyToEmail || undefined,
+        subject: `💍 New wedding enquiry from ${enquirerName}`,
         text: textBody,
         html: htmlBody,
       }),

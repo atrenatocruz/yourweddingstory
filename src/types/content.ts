@@ -96,3 +96,14 @@ export interface SiteSettings {
   cardColor: string
   textColor: string
 }
+
+export type ContactFieldType = 'text' | 'email' | 'tel' | 'date' | 'number' | 'textarea'
+
+export interface ContactFormField {
+  id: string
+  position: number
+  label: string
+  type: ContactFieldType
+  required: boolean
+  placeholder: string | null
+}
