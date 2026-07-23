@@ -53,34 +53,62 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const fromEmail = process.env.CONTACT_FROM_EMAIL || 'onboarding@resend.dev'
 
   const textBody = [
-    'New wedding enquiry from yourweddingstory.pt',
+    `💌 New wedding enquiry from yourweddingstory.pt`,
     '',
-    `Full name: ${fullName}`,
-    `Fiancé's full name: ${partnerName}`,
-    `Email: ${email}`,
-    `Mobile phone: ${phone || '-'}`,
-    `Wedding date: ${weddingDate}`,
-    `Venue name: ${venueName}`,
-    `Estimated guest count: ${guestCount || '-'}`,
+    `👰🤵 Couple: ${fullName} & ${partnerName}`,
+    `📧 Email: ${email}`,
+    `📱 Phone: ${phone || '-'}`,
+    `📅 Wedding date: ${weddingDate}`,
+    `📍 Venue: ${venueName}`,
+    `👥 Estimated guests: ${guestCount || '-'}`,
     '',
-    'Vision for the wedding:',
+    '💭 Their vision for the wedding:',
     vision || '-',
     '',
-    'Type of content requested:',
+    '🎥 Type of content requested:',
     contentType || '-',
   ].join('\n')
 
+  const row = (emoji: string, label: string, value: string) => `
+    <tr>
+      <td style="padding: 10px 0; border-bottom: 1px solid #e8ded0; font-size: 15px; color: #6b6459; white-space: nowrap; vertical-align: top;">
+        ${emoji}&nbsp; ${label}
+      </td>
+      <td style="padding: 10px 0 10px 16px; border-bottom: 1px solid #e8ded0; font-size: 15px; color: #222222; vertical-align: top;">
+        ${value || '<em>-</em>'}
+      </td>
+    </tr>
+  `
+
   const htmlBody = `
-    <h2>New wedding enquiry from yourweddingstory.pt</h2>
-    <p><strong>Full name:</strong> ${escapeHtml(fullName)}</p>
-    <p><strong>Fiancé's full name:</strong> ${escapeHtml(partnerName)}</p>
-    <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-    <p><strong>Mobile phone:</strong> ${escapeHtml(phone) || '-'}</p>
-    <p><strong>Wedding date:</strong> ${escapeHtml(weddingDate)}</p>
-    <p><strong>Venue name:</strong> ${escapeHtml(venueName)}</p>
-    <p><strong>Estimated guest count:</strong> ${escapeHtml(guestCount) || '-'}</p>
-    <p><strong>Vision for the wedding:</strong><br>${escapeHtml(vision).replace(/\n/g, '<br>') || '-'}</p>
-    <p><strong>Type of content requested:</strong><br>${escapeHtml(contentType).replace(/\n/g, '<br>') || '-'}</p>
+    <div style="background:#f1ece6; padding: 32px 16px; font-family: Georgia, 'Times New Roman', serif;">
+      <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(34,34,34,0.12);">
+        <div style="padding: 32px 28px 8px; text-align: center;">
+          <div style="font-size: 32px; line-height: 1;">💍💌</div>
+          <h1 style="font-size: 22px; color: #222222; margin: 12px 0 4px; font-weight: 400;">A new wedding enquiry just arrived!</h1>
+          <p style="color: #6b6459; font-size: 14px; margin: 0 0 20px;">from yourweddingstory.pt</p>
+        </div>
+        <div style="padding: 0 28px 28px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            ${row('👰🤵', 'Couple', `${escapeHtml(fullName)} &amp; ${escapeHtml(partnerName)}`)}
+            ${row('📧', 'Email', `<a href="mailto:${escapeHtml(email)}" style="color:#5c7482;">${escapeHtml(email)}</a>`)}
+            ${row('📱', 'Phone', escapeHtml(phone))}
+            ${row('📅', 'Wedding date', escapeHtml(weddingDate))}
+            ${row('📍', 'Venue', escapeHtml(venueName))}
+            ${row('👥', 'Guests', escapeHtml(guestCount))}
+          </table>
+          <div style="margin-top: 20px;">
+            <p style="font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #6b6459; margin: 0 0 6px;">💭 Their vision for the wedding</p>
+            <p style="font-size: 15px; color: #222222; margin: 0 0 20px; white-space: pre-wrap;">${escapeHtml(vision) || '<em>-</em>'}</p>
+            <p style="font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #6b6459; margin: 0 0 6px;">🎥 Content they'd love</p>
+            <p style="font-size: 15px; color: #222222; margin: 0; white-space: pre-wrap;">${escapeHtml(contentType) || '<em>-</em>'}</p>
+          </div>
+        </div>
+        <div style="background: #f1ece6; padding: 16px 28px; text-align: center;">
+          <p style="font-size: 12px; color: #6b6459; margin: 0;">Just hit reply to write back to ${escapeHtml(fullName)} directly 💕</p>
+        </div>
+      </div>
+    </div>
   `
 
   try {
@@ -94,7 +122,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         from: `Your Wedding Story <${fromEmail}>`,
         to: [toEmail],
         reply_to: email,
-        subject: `New wedding enquiry from ${fullName}`,
+        subject: `💍 New wedding enquiry from ${fullName} & ${partnerName}`,
         text: textBody,
         html: htmlBody,
       }),

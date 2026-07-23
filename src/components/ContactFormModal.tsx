@@ -97,12 +97,12 @@ export function ContactFormModal() {
 
         {status === 'success' ? (
           <div className="contact-modal-success">
-            <p className="body-text">Thank you! Melanie will be in touch soon.</p>
+            <p className="body-text">Thank you! We&apos;ll be in touch soon.</p>
           </div>
         ) : (
           <form className="contact-form" onSubmit={handleSubmit}>
             <p className="contact-form-intro body-text">
-              Reach out with your details and she&apos;ll be in touch soon!
+              Reach out with your details and we&apos;ll be in touch soon!
             </p>
 
             <div className="contact-field">
